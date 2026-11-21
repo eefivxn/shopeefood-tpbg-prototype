@@ -13,7 +13,7 @@ export function createEmptyCart(): CartState {
 }
 
 export interface CartLineView {
-  readonly menuItemId: CartState['lines'][number]['menuItemId'];
+  readonly menuItemId: MenuItemId;
   readonly qty: number;
   readonly netPrice: Rupiah;
   readonly lineSubtotal: Rupiah;
