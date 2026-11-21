@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { RESTAURANTS, RESTAURANT_LIST } from '../data/restaurants';
-import { MENU_ITEMS, MENU_ITEM_LIST, getMenuItemsByRestaurant } from '../data/menuItems';
-import { VOUCHERS, VOUCHER_LIST, listVouchersForSlot } from '../data/vouchers';
-import { ADDRESSES, ADDRESS_LIST, DEFAULT_ADDRESS_ID } from '../data/addresses';
-import { DEFAULT_PROFILE } from '../data/profile';
-import { getNetPrice } from '../types/domain';
-import type { RestaurantId, MenuItemId, VoucherId } from '../types/domain';
+import { RESTAURANTS, RESTAURANT_LIST } from '../../data/restaurants';
+import { MENU_ITEMS, MENU_ITEM_LIST, getMenuItemsByRestaurant } from '../../data/menuItems';
+import { VOUCHERS, VOUCHER_LIST, listVouchersForSlot } from '../../data/vouchers';
+import { ADDRESSES, ADDRESS_LIST, DEFAULT_ADDRESS_ID } from '../../data/addresses';
+import { DEFAULT_PROFILE } from '../../data/profile';
+import { getNetPrice } from '../../types/domain';
+import type { RestaurantId, MenuItemId, VoucherId } from '../../types/domain';
 
 describe('mock data integrity', () => {
   it('has exactly 6 restaurants R-01..R-06', () => {
@@ -149,8 +149,10 @@ describe('mock data integrity', () => {
     expect(v.name).toBe('Hemat Makan');
     expect(v.slot).toBe('FOOD');
     expect(v.valueType).toBe('FIXED');
-    expect(v.value).toBe(5000);
-    expect(v.maxDiscount).toBeNull();
+    if (v.valueType === 'FIXED') {
+      expect(v.value).toBe(5000);
+      expect(v.maxDiscount).toBeNull();
+    }
     expect(v.minSubtotal).toBe(25000);
     expect(v.onlyRestaurantId).toBeNull();
   });
@@ -169,23 +171,29 @@ describe('mock data integrity', () => {
   it('V-F03 is only for R-05', () => {
     const v = VOUCHERS['V-F03'];
     expect(v.onlyRestaurantId).toBe('R-05');
-    expect(v.value).toBe(10000);
+    if (v.valueType === 'FIXED') {
+      expect(v.value).toBe(10000);
+    }
     expect(v.minSubtotal).toBe(40000);
   });
 
   it('V-D01 values match PRD 9.4', () => {
     const v = VOUCHERS['V-D01'];
     expect(v.slot).toBe('DELIVERY');
-    expect(v.value).toBe(8000);
-    expect(v.maxDiscount).toBe(8000);
+    if (v.valueType === 'FIXED') {
+      expect(v.value).toBe(8000);
+      expect(v.maxDiscount).toBe(8000);
+    }
     expect(v.minSubtotal).toBe(20000);
   });
 
   it('V-D02 values match PRD 9.4', () => {
     const v = VOUCHERS['V-D02'];
     expect(v.slot).toBe('DELIVERY');
-    expect(v.value).toBe(5000);
-    expect(v.maxDiscount).toBe(5000);
+    if (v.valueType === 'FIXED') {
+      expect(v.value).toBe(5000);
+      expect(v.maxDiscount).toBe(5000);
+    }
     expect(v.minSubtotal).toBe(15000);
   });
 

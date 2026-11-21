@@ -7,8 +7,8 @@ import {
   validateBudgetInput,
   BUDGET_MIN,
   BUDGET_MAX,
-} from '../lib/budget';
-import { formatPercent, barPercent } from '../lib/formatRupiah';
+} from '../../lib/budget';
+import { formatPercent, barPercent } from '../../lib/formatRupiah';
 
 describe('getProjection', () => {
   it('spentToday + orderValue', () => {
@@ -164,12 +164,12 @@ describe('barPercent', () => {
 
 describe('evaluateBudget percentLabel integration', () => {
   it('percentLabel matches formatPercent', () => {
-    const e = evaluateBudget(50000, 12000, 40500);
+    const e = evaluateBudget(50000, 12000, 28500);
     expect(e?.percentLabel).toBe('81%');
   });
 
   it('barPercent matches', () => {
-    const e = evaluateBudget(50000, 12000, 40500);
+    const e = evaluateBudget(50000, 12000, 28500);
     expect(e?.barPercent).toBe(81);
   });
 });

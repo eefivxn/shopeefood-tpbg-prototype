@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createReceiptId } from '../lib/receiptId';
+import { createReceiptId } from '../../lib/receiptId';
 
 describe('createReceiptId', () => {
   it('prefixes RCPT- to injected generator output', () => {

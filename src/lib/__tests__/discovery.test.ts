@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { filterAndSortRestaurants } from '../lib/discovery';
-import { RESTAURANTS } from '../data/restaurants';
-import { MENU_ITEMS } from '../data/menuItems';
-import { estimateRestaurantAllIn } from '../lib/pricing';
-import type { DiscoveryParams } from '../lib/discovery';
+import { filterAndSortRestaurants } from '../../lib/discovery';
+import { RESTAURANTS } from '../../data/restaurants';
+import { MENU_ITEMS } from '../../data/menuItems';
+import { estimateRestaurantAllIn } from '../../lib/pricing';
+import type { DiscoveryParams } from '../../lib/discovery';
 
 const baseParams: DiscoveryParams = {
   query: '',

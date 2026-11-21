@@ -2,7 +2,7 @@ import { ADDRESSES } from '../data/addresses';
 import { MENU_ITEMS } from '../data/menuItems';
 import { RESTAURANTS } from '../data/restaurants';
 import { VOUCHERS } from '../data/vouchers';
-import type { AddressId, RestaurantId, Rupiah, Voucher, VoucherId } from '../types/domain';
+import type { AddressId, MenuItemId, RestaurantId, Rupiah, Voucher, VoucherId } from '../types/domain';
 import { getNetPrice } from '../types/domain';
 import type { CalculateOrderInput, ResolvedLine } from '../types/pricing';
 import type { CartState } from '../types/state';
@@ -19,7 +19,7 @@ export interface CartLineView {
   readonly lineSubtotal: Rupiah;
 }
 
-export function computeCartSubtotal(lines: readonly CartState['lines']): Rupiah {
+export function computeCartSubtotal(lines: CartState['lines']): Rupiah {
   let subtotal = 0;
   for (const line of lines) {
     const item = MENU_ITEMS[line.menuItemId];

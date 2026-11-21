@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatRupiah, formatDiscount, formatSignedRupiah, formatPercent, barPercent } from '../lib/formatRupiah';
+import { formatRupiah, formatDiscount, formatSignedRupiah, formatPercent, barPercent } from '../../lib/formatRupiah';
 
 const RUPIAH_RE = /^[\u2212+]?Rp\d{1,3}(\.\d{3})*$/;
 

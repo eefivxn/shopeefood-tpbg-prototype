@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { RESTAURANTS } from '../data/restaurants';
-import { MENU_ITEMS } from '../data/menuItems';
-import { VOUCHERS } from '../data/vouchers';
-import { ADDRESSES } from '../data/addresses';
-import { calculateOrder } from '../lib/pricing';
-import { buildPendingPriceChange, priceChangeCauseText } from '../lib/priceChange';
-import { evaluateBudget } from '../lib/budget';
-import type { CalculateOrderInput } from '../types/pricing';
-import type { AddressId, Rupiah } from '../types/domain';
+import { RESTAURANTS } from '../../data/restaurants';
+import { MENU_ITEMS } from '../../data/menuItems';
+import { VOUCHERS } from '../../data/vouchers';
+import { ADDRESSES } from '../../data/addresses';
+import { calculateOrder } from '../../lib/pricing';
+import { buildPendingPriceChange, priceChangeCauseText } from '../../lib/priceChange';
+import { evaluateBudget } from '../../lib/budget';
+import type { CalculateOrderInput } from '../../types/pricing';
+import type { Rupiah } from '../../types/domain';
 
 function order(
   restaurantId: keyof typeof RESTAURANTS,

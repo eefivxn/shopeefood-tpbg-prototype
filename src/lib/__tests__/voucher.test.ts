@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { RESTAURANTS } from '../data/restaurants';
-import { MENU_ITEMS } from '../data/menuItems';
-import { VOUCHERS } from '../data/vouchers';
-import { calculateOrder, evaluateVoucher, computeVoucherDiscount } from '../lib/pricing';
-import { voucherReasonMessage } from '../lib/voucherCopy';
-import type { CalculateOrderInput } from '../types/pricing';
-import type { Voucher } from '../types/domain';
+import { RESTAURANTS } from '../../data/restaurants';
+import { MENU_ITEMS } from '../../data/menuItems';
+import { VOUCHERS } from '../../data/vouchers';
+import { calculateOrder, evaluateVoucher, computeVoucherDiscount } from '../../lib/pricing';
+import { voucherReasonMessage } from '../../lib/voucherCopy';
+import type { CalculateOrderInput } from '../../types/pricing';
+import type { Voucher } from '../../types/domain';
 
 function order(
   restaurantId: keyof typeof RESTAURANTS,

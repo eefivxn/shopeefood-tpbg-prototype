@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { RESTAURANTS } from '../data/restaurants';
-import { MENU_ITEMS } from '../data/menuItems';
-import { VOUCHERS } from '../data/vouchers';
-import { ADDRESSES } from '../data/addresses';
-import { calculateOrder, estimateMenuItemAllIn, estimateRestaurantAllIn, computeVoucherDiscount, computeSubtotal, EMPTY_BREAKDOWN } from '../lib/pricing';
-import { floorDiv } from '../lib/intMath';
-import type { CalculateOrderInput } from '../types/pricing';
-import type { MenuItem, Rupiah, Voucher } from '../types/domain';
+import { RESTAURANTS } from '../../data/restaurants';
+import { MENU_ITEMS } from '../../data/menuItems';
+import { VOUCHERS } from '../../data/vouchers';
+import { ADDRESSES } from '../../data/addresses';
+import { calculateOrder, estimateMenuItemAllIn, estimateRestaurantAllIn, computeVoucherDiscount, computeSubtotal, EMPTY_BREAKDOWN } from '../../lib/pricing';
+import { floorDiv } from '../../lib/intMath';
+import type { CalculateOrderInput } from '../../types/pricing';
+import type { MenuItem, Rupiah, Voucher } from '../../types/domain';
 
 function order(
   restaurantId: keyof typeof RESTAURANTS,
