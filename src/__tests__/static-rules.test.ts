@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
+import * as ts from 'typescript';
 
 const SRC_DIR = join(process.cwd(), 'src');
 const TS_EXTS = new Set(['.ts', '.tsx']);
@@ -21,11 +22,33 @@ function listTsFiles(dir: string, acc: string[] = []): string[] {
 
 const allFiles = listTsFiles(SRC_DIR).filter((f) => !f.includes('__tests__'));
 
+const ROOT_CONFIG_FILES = [
+  join(process.cwd(), 'vite.config.ts'),
+  join(process.cwd(), 'tailwind.config.js'),
+  join(process.cwd(), 'postcss.config.js'),
+  join(process.cwd(), '.eslintrc.cjs'),
+];
+
 const PURE_DIRS = ['src/lib', 'src/state', 'src/data'];
 
 function isPureLayer(absPath: string): boolean {
   const rel = relative(process.cwd(), absPath).replace(/\\/g, '/');
   return PURE_DIRS.some((d) => rel.startsWith(d + '/'));
+}
+
+function hasAnyComment(filePath: string): boolean {
+  const content = readFileSync(filePath, 'utf-8');
+  const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true, kind);
+  const ranges: ts.CommentRange[] = [];
+  function visit(node: ts.Node) {
+    const leading = ts.getLeadingCommentRanges(content, node.getFullStart()) ?? [];
+    const trailing = ts.getTrailingCommentRanges(content, node.getEnd()) ?? [];
+    ranges.push(...leading, ...trailing);
+    ts.forEachChild(node, visit);
+  }
+  visit(sf);
+  return ranges.length > 0;
 }
 
 describe('static rules (F-25)', () => {
@@ -143,6 +166,45 @@ describe('static rules (F-25)', () => {
       const content = readFileSync(f, 'utf-8').toLowerCase();
       expect(content).not.toContain('shopeefood');
       expect(content).not.toContain('shopee');
+    }
+  });
+
+  it('no comments in any src .ts/.tsx file (line, block, JSDoc, JSX comments)', () => {
+    const allSrcFiles = listTsFiles(SRC_DIR);
+    for (const f of allSrcFiles) {
+      if (f.endsWith('static-rules.test.ts')) continue;
+      expect(hasAnyComment(f), `Comment found in ${relative(process.cwd(), f)}`).toBe(false);
+    }
+  });
+
+  it('no comments in root config files', () => {
+    for (const f of ROOT_CONFIG_FILES) {
+      if (!existsSync(f)) continue;
+      expect(hasAnyComment(f), `Comment found in ${relative(process.cwd(), f)}`).toBe(false);
+    }
+  });
+
+  it('no dynamic class interpolation in src/components or src/pages', () => {
+    const componentDirs = [join(SRC_DIR, 'components'), join(SRC_DIR, 'pages')];
+    for (const dir of componentDirs) {
+      if (!existsSync(dir)) continue;
+      const files = listTsFiles(dir);
+      for (const f of files) {
+        const content = readFileSync(f, 'utf-8');
+        expect(content).not.toMatch(/`[a-z]+-\$\{/);
+      }
+    }
+  });
+
+  it('no <a href= for internal routes in src/components or src/pages', () => {
+    const componentDirs = [join(SRC_DIR, 'components'), join(SRC_DIR, 'pages')];
+    for (const dir of componentDirs) {
+      if (!existsSync(dir)) continue;
+      const files = listTsFiles(dir);
+      for (const f of files) {
+        const content = readFileSync(f, 'utf-8');
+        expect(content).not.toMatch(/<a\s+href=/);
+      }
     }
   });
 });
