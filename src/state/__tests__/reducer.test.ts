@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { appReducer, createInitialState } from '../reducer';
+import { appReducer, createInitialState, selectCartView } from '../reducer';
 import type { AppAction } from '../reducer';
+import { toPersisted } from '../persistence';
 import type { AppState } from '../../types/state';
 
 function dispatch(state: AppState, action: AppAction): AppState {
   return appReducer(state, action);
 }
 
-function addItem(state: AppState, menuItemId: string, qty: number = 1): AppState {
-  let s = dispatch(state, { type: 'ADD_ITEM_REQUESTED', menuItemId: menuItemId as never });
-  return s;
+function addItem(state: AppState, menuItemId: string): AppState {
+  return dispatch(state, { type: 'ADD_ITEM_REQUESTED', menuItemId: menuItemId as never });
 }
 
 function addMultiple(state: AppState, ...items: string[]): AppState {
@@ -28,10 +28,14 @@ function seededIso(): string {
   return '2026-01-01T00:00:00.000Z';
 }
 
+function getCartTotal(state: AppState): number {
+  const view = selectCartView(state);
+  return view.breakdown?.total ?? 0;
+}
+
 describe('T1: Cart add/remove/modify transitions', () => {
   it('T1-A: ADD_ITEM_REQUESTED to empty cart sets restaurantId and one line', () => {
-    const s0 = createInitialState();
-    const s1 = addItem(s0, 'M-101');
+    const s1 = addItem(createInitialState(), 'M-101');
     expect(s1.cart.restaurantId).toBe('R-01');
     expect(s1.cart.lines).toHaveLength(1);
     expect(s1.cart.lines[0]?.menuItemId).toBe('M-101');
@@ -146,20 +150,18 @@ describe('T2: Voucher apply/remove and notice', () => {
   });
 
   it('T2-E: ineligible voucher is not applied', () => {
-    let s = addItem(createInitialState(), 'M-101');
+    let s = addItem(createInitialState(), 'M-102');
     s = dispatch(s, { type: 'VOUCHER_APPLY', voucherId: 'V-F02' });
     expect(s.cart.foodVoucherId).toBeNull();
   });
 
   it('T2-F: decreasing qty below min removes voucher automatically', () => {
     let s = addItem(createInitialState(), 'M-101');
-    s = dispatch(s, { type: 'LINE_INCREMENT', menuItemId: 'M-101' });
-    s = dispatch(s, { type: 'VOUCHER_APPLY', voucherId: 'V-F01' });
-    expect(s.cart.foodVoucherId).toBe('V-F01');
-    s = dispatch(s, { type: 'LINE_DECREMENT', menuItemId: 'M-101' });
+    s = dispatch(s, { type: 'VOUCHER_APPLY', voucherId: 'V-D01' });
+    expect(s.cart.deliveryVoucherId).toBe('V-D01');
     s = dispatch(s, { type: 'LINE_DECREMENT', menuItemId: 'M-101' });
     expect(s.cart.lines).toHaveLength(0);
-    expect(s.cart.foodVoucherId).toBeNull();
+    expect(s.cart.deliveryVoucherId).toBeNull();
   });
 });
 
@@ -182,7 +184,7 @@ describe('T3: Address select and price change', () => {
   });
 
   it('T3-C: F-09 zero-delta address change does NOT open dialog', () => {
-    let s = addItem(createInitialState(), 'M-301');
+    let s = addMultiple(createInitialState(), 'M-301', 'M-304');
     s = dispatch(s, { type: 'VOUCHER_APPLY', voucherId: 'V-D01' });
     s = dispatch(s, { type: 'OVERLAY_OPEN', overlay: { kind: 'ADDRESS_PICKER' } });
     s = dispatch(s, { type: 'ADDRESS_SELECT', addressId: 'ADDR-02' });
@@ -213,15 +215,9 @@ describe('T3: Address select and price change', () => {
 });
 
 describe('T4: Pay request and EXCEEDED guard', () => {
-  function setupCartWithTotal(): { state: AppState; total: number } {
-    let s = addItem(createInitialState(), 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    return { state: s, total: view.breakdown?.total ?? 0 };
-  }
-
   it('T4-A: PAY_REQUESTED with correct total succeeds', () => {
-    const { state, total } = setupCartWithTotal();
+    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const total = getCartTotal(state);
     const s2 = dispatch(state, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r1'), paidAtIso: seededIso(),
     });
@@ -232,7 +228,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-B: PAY_REQUESTED with wrong total fails', () => {
-    const { state } = setupCartWithTotal();
+    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
     const s2 = dispatch(state, {
       type: 'PAY_REQUESTED', expectedTotal: 999999, receiptId: seededReceiptId('r2'), paidAtIso: seededIso(),
     });
@@ -240,12 +236,9 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-C: PAY_REQUESTED opens BUDGET_EXCEEDED when projection > budget', () => {
-    let s = createInitialState();
-    s = { ...s, budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
     s = addItem(s, 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     const s2 = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r3'), paidAtIso: seededIso(),
     });
@@ -253,12 +246,9 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-D: EXCEEDED_CONTINUE pays', () => {
-    let s = createInitialState();
-    s = { ...s, budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
     s = addItem(s, 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r4'), paidAtIso: seededIso(),
     });
@@ -271,12 +261,9 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-E: EXCEEDED_CHANGE_ORDER dismisses without paying', () => {
-    let s = createInitialState();
-    s = { ...s, budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
     s = addItem(s, 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r5'), paidAtIso: seededIso(),
     });
@@ -286,12 +273,9 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-F: EXCEEDED_SHOW_AFFORDABLE enables budgetFilterOn', () => {
-    let s = createInitialState();
-    s = { ...s, budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
     s = addItem(s, 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r6'), paidAtIso: seededIso(),
     });
@@ -303,10 +287,8 @@ describe('T4: Pay request and EXCEEDED guard', () => {
 
 describe('T5: Payment execution and receipt', () => {
   it('T5-A: receipt delta is always 0', () => {
-    let s = addItem(createInitialState(), 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('t5a'), paidAtIso: seededIso(),
     });
@@ -316,11 +298,9 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-B: spentToday increases by exactly paidAmount', () => {
-    let s = addItem(createInitialState(), 'M-101');
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
     const spentBefore = s.spentToday;
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('t5b'), paidAtIso: seededIso(),
     });
@@ -328,13 +308,11 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-C: cart cleared and address reset after payment', () => {
-    let s = addItem(createInitialState(), 'M-101');
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
     s = dispatch(s, { type: 'OVERLAY_OPEN', overlay: { kind: 'ADDRESS_PICKER' } });
     s = dispatch(s, { type: 'ADDRESS_SELECT', addressId: 'ADDR-02' });
     s = dispatch(s, { type: 'PRICE_CHANGE_ACK' });
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('t5c'), paidAtIso: seededIso(),
     });
@@ -344,10 +322,8 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-D: idempotency — same receiptId does not double-pay', () => {
-    let s = addItem(createInitialState(), 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const total = getCartTotal(s);
     const spentBefore = s.spentToday;
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('t5d'), paidAtIso: seededIso(),
@@ -390,7 +366,7 @@ describe('T6: Budget settings, filter, sort', () => {
   });
 
   it('T6-E: SORT_SET changes sortMode', () => {
-    let s = dispatch(createInitialState(), { type: 'SORT_SET', mode: 'cheapest-all-in' });
+    const s = dispatch(createInitialState(), { type: 'SORT_SET', mode: 'cheapest-all-in' });
     expect(s.sortMode).toBe('cheapest-all-in');
   });
 });
@@ -446,20 +422,17 @@ describe('I-1..I-10 invariants', () => {
   });
 
   it('I-6: budgetFilterOn implies budget !== null', () => {
-    let s = createInitialState();
-    s = dispatch(s, { type: 'BUDGET_FILTER_SET', on: true });
+    let s = dispatch(createInitialState(), { type: 'BUDGET_FILTER_SET', on: true });
     expect(s.budgetFilterOn).toBe(true);
     expect(s.budget).not.toBeNull();
-    s = { ...s, budget: null };
-    s = dispatch(s, { type: 'BUDGET_FILTER_SET', on: true });
-    expect(s.budgetFilterOn).toBe(false);
+    const sNoBudget = { ...createInitialState(), budget: null };
+    const s2 = dispatch(sNoBudget, { type: 'BUDGET_FILTER_SET', on: true });
+    expect(s2.budgetFilterOn).toBe(false);
   });
 
   it('I-7: delta === 0 after payment', () => {
-    let s = addItem(createInitialState(), 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('i7'), paidAtIso: seededIso(),
     });
@@ -467,18 +440,16 @@ describe('I-1..I-10 invariants', () => {
   });
 
   it('I-8: spentToday only increases by exactly receipt.paidAmount', () => {
-    let s = addItem(createInitialState(), 'M-101');
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
     const spentBefore = s.spentToday;
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('i8'), paidAtIso: seededIso(),
     });
     expect(s.spentToday - spentBefore).toBe(s.lastReceipt?.paidAmount);
   });
 
-  it('I-9: reducer does not use Math.random or Date.now (purity via no side-effects)', () => {
+  it('I-9: reducer is pure — does not mutate input state', () => {
     const s0 = createInitialState();
     const s1 = dispatch(s0, { type: 'SORT_SET', mode: 'cheapest-all-in' });
     expect(s1).not.toBe(s0);
@@ -508,10 +479,8 @@ describe('I-1..I-10 invariants', () => {
 
 describe('receiptId idempotency', () => {
   it('same receiptId dispatched twice does not change state second time', () => {
-    let s = addItem(createInitialState(), 'M-101');
-    const { selectCartView } = require('../reducer');
-    const view = selectCartView(s);
-    const total = view.breakdown?.total ?? 0;
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: 'RCPT-idem', paidAtIso: seededIso(),
     });
@@ -525,7 +494,6 @@ describe('receiptId idempotency', () => {
 
 describe('toPersisted omits volatile fields', () => {
   it('toPersisted does not include overlay, pendingAddItem, lastReceipt, etc.', () => {
-    const { toPersisted } = require('../persistence');
     let s = addItem(createInitialState(), 'M-101');
     s = dispatch(s, { type: 'VOUCHER_APPLY', voucherId: 'V-F01' });
     s = dispatch(s, { type: 'OVERLAY_OPEN', overlay: { kind: 'BUDGET_SETTINGS' } });

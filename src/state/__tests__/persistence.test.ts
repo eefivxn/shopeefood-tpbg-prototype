@@ -4,8 +4,8 @@ import {
   createStateFromStorage, STORAGE_KEY,
 } from '../persistence';
 import type { MinimalStorage } from '../persistence';
-import { createInitialState } from '../reducer';
-import type { AppState, PersistedState } from '../../types/state';
+import { appReducer, createInitialState } from '../reducer';
+import type { PersistedState } from '../../types/state';
 
 function makeStorage(initial: Record<string, string> = {}): MinimalStorage {
   const data: Record<string, string> = { ...initial };
@@ -159,7 +159,7 @@ describe('S-1..S-17 sanitizer', () => {
       ...validPersisted(),
       cart: {
         restaurantId: 'R-01',
-        lines: [{ menuItemId: 'M-101', qty: 1 }],
+        lines: [{ menuItemId: 'M-102', qty: 1 }],
         foodVoucherId: 'V-F02',
         deliveryVoucherId: null,
       } as never,
@@ -212,7 +212,6 @@ describe('toPersisted / savePersistedState', () => {
   });
 
   it('toPersisted persists previousAddressId during price change dialog', () => {
-    const { appReducer } = require('../reducer');
     let s = createInitialState();
     s = appReducer(s, { type: 'ADD_ITEM_REQUESTED', menuItemId: 'M-101' });
     s = appReducer(s, { type: 'OVERLAY_OPEN', overlay: { kind: 'ADDRESS_PICKER' } });
