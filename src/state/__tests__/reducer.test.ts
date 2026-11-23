@@ -216,7 +216,7 @@ describe('T3: Address select and price change', () => {
 
 describe('T4: Pay request and EXCEEDED guard', () => {
   it('T4-A: PAY_REQUESTED with correct total succeeds', () => {
-    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const total = getCartTotal(state);
     const s2 = dispatch(state, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('r1'), paidAtIso: seededIso(),
@@ -228,7 +228,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-B: PAY_REQUESTED with wrong total fails', () => {
-    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    const state = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const s2 = dispatch(state, {
       type: 'PAY_REQUESTED', expectedTotal: 999999, receiptId: seededReceiptId('r2'), paidAtIso: seededIso(),
     });
@@ -236,7 +236,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-C: PAY_REQUESTED opens BUDGET_EXCEEDED when projection > budget', () => {
-    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 } as AppState;
     s = addItem(s, 'M-101');
     const total = getCartTotal(s);
     const s2 = dispatch(s, {
@@ -246,7 +246,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-D: EXCEEDED_CONTINUE pays', () => {
-    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 } as AppState;
     s = addItem(s, 'M-101');
     const total = getCartTotal(s);
     s = dispatch(s, {
@@ -261,7 +261,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-E: EXCEEDED_CHANGE_ORDER dismisses without paying', () => {
-    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 } as AppState;
     s = addItem(s, 'M-101');
     const total = getCartTotal(s);
     s = dispatch(s, {
@@ -273,7 +273,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
   });
 
   it('T4-F: EXCEEDED_SHOW_AFFORDABLE enables budgetFilterOn', () => {
-    let s = { ...createInitialState(), budget: 1000, spentToday: 0 };
+    let s = { ...createInitialState(), budget: 1000, spentToday: 0 } as AppState;
     s = addItem(s, 'M-101');
     const total = getCartTotal(s);
     s = dispatch(s, {
@@ -287,7 +287,7 @@ describe('T4: Pay request and EXCEEDED guard', () => {
 
 describe('T5: Payment execution and receipt', () => {
   it('T5-A: receipt delta is always 0', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('t5a'), paidAtIso: seededIso(),
@@ -298,7 +298,7 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-B: spentToday increases by exactly paidAmount', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const spentBefore = s.spentToday;
     const total = getCartTotal(s);
     s = dispatch(s, {
@@ -308,7 +308,7 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-C: cart cleared and address reset after payment', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     s = dispatch(s, { type: 'OVERLAY_OPEN', overlay: { kind: 'ADDRESS_PICKER' } });
     s = dispatch(s, { type: 'ADDRESS_SELECT', addressId: 'ADDR-02' });
     s = dispatch(s, { type: 'PRICE_CHANGE_ACK' });
@@ -322,7 +322,7 @@ describe('T5: Payment execution and receipt', () => {
   });
 
   it('T5-D: idempotency — same receiptId does not double-pay', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const total = getCartTotal(s);
     const spentBefore = s.spentToday;
     s = dispatch(s, {
@@ -431,7 +431,7 @@ describe('I-1..I-10 invariants', () => {
   });
 
   it('I-7: delta === 0 after payment', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: seededReceiptId('i7'), paidAtIso: seededIso(),
@@ -440,7 +440,7 @@ describe('I-1..I-10 invariants', () => {
   });
 
   it('I-8: spentToday only increases by exactly receipt.paidAmount', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const spentBefore = s.spentToday;
     const total = getCartTotal(s);
     s = dispatch(s, {
@@ -479,7 +479,7 @@ describe('I-1..I-10 invariants', () => {
 
 describe('receiptId idempotency', () => {
   it('same receiptId dispatched twice does not change state second time', () => {
-    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 };
+    let s = { ...addItem(createInitialState(), 'M-101'), budget: 200000 } as AppState;
     const total = getCartTotal(s);
     s = dispatch(s, {
       type: 'PAY_REQUESTED', expectedTotal: total, receiptId: 'RCPT-idem', paidAtIso: seededIso(),

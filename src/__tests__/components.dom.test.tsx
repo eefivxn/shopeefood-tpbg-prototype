@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, click, pressKey, cleanup, byText, byRole, byLabel } from '../test-support/dom';
+import { render, click, cleanup, byText } from '../test-support/dom';
 import { Button } from '../components/Button';
 import { QuantityStepper } from '../components/QuantityStepper';
 import { Toggle } from '../components/FilterSortBar';
@@ -215,7 +215,7 @@ describe('BudgetExceededDialog', () => {
   }
 
   it('initial focus is NOT on Lanjutkan tetap button', () => {
-    const { container } = render(
+    render(
       <BudgetExceededDialog
         open={true}
         snapshot={makeSnapshot()}
@@ -225,14 +225,14 @@ describe('BudgetExceededDialog', () => {
         titleId="exceeded-title"
       />,
     );
-    const initialFocus = container.querySelector('[data-initial-focus]');
+    const initialFocus = document.querySelector('[data-initial-focus]');
     expect(initialFocus).not.toBeNull();
     expect(initialFocus?.textContent).not.toContain('Lanjutkan tetap');
     expect(initialFocus?.textContent).toContain('Ubah pesanan');
   });
 
   it('has alertdialog role', () => {
-    const { container } = render(
+    render(
       <BudgetExceededDialog
         open={true}
         snapshot={makeSnapshot()}
@@ -242,12 +242,12 @@ describe('BudgetExceededDialog', () => {
         titleId="exceeded-title"
       />,
     );
-    const dialog = container.querySelector('[role="alertdialog"]');
+    const dialog = document.querySelector('[role="alertdialog"]');
     expect(dialog).not.toBeNull();
   });
 
   it('shows three action buttons in correct order', () => {
-    const { container } = render(
+    render(
       <BudgetExceededDialog
         open={true}
         snapshot={makeSnapshot()}
@@ -257,7 +257,8 @@ describe('BudgetExceededDialog', () => {
         titleId="exceeded-title"
       />,
     );
-    const buttons = container.querySelectorAll('button');
+    const overlay = document.getElementById('overlay-root');
+    const buttons = overlay?.querySelectorAll('button') ?? [];
     const texts = Array.from(buttons).map((b) => b.textContent?.trim());
     expect(texts).toContain('Ubah pesanan');
     expect(texts).toContain('Lihat yang sesuai budget');
