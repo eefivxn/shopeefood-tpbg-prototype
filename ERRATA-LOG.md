@@ -18,11 +18,16 @@
 
 - **formatPercent (F-19) reconciliation:** DESIGN-SYSTEM §3.4 menyatakan pembulatan nearest-tenth (`Math.floor((proyeksi*2000+budget)/(2*budget))`). Level 0 F-19 mensyaratkan `39.999/50.000 → "79%"` (status OK) dan `50.001/50.000 → "101%"` (status EXCEEDED), yang tidak konsisten dengan nearest-tenth murni (menghasilkan "80%" dan "100%"). Aturan rekonsiliasi: hitung nearest-tenth; jika hasil bulat adalah "80%" dan status OK, gunakan `floorDiv(projection*100, budget)` (floor whole-percent); jika hasil bulat adalah "100%" dan status EXCEEDED, gunakan `floorDiv(projection*100 + budget - 1, budget)` (ceil whole-percent); jika `projection === budget`, kembalikan "100%". Vektor lain (81%, 80% [WARN], 107,8%, 118%, 100% [WARN]) tetap lolos. Penentuan status di-inline di `formatPercent` (tanpa mengimpor `getBudgetStatus`) untuk menghindari dependensi sirkular.
 - **P-11 per-item price discrepancy:** AGENTS.md §0.1 item 1 mengutip M-101 `Rp15.000`, M-102 `Rp18.000`, M-103 `Rp12.000`. PRD.md §9.3 (sumber mock data otoritatif) mendefinisikan M-101 `Rp30.000`, M-102 `Rp10.000`, M-103 `Rp5.000`. Keduanya berjumlah `Rp45.000`. Mock data PRD dipertahankan tanpa perubahan; hasil P-11 (pajak 4.500, total 62.500) benar untuk kedua himpunan harga karena hanya total dasar pajak yang relevan.
+- **Modal portal + useModalBehavior integration:** `useModalBehavior` takes `initialFocus` (CSS selector string) rather than `open` flag. The `Modal` component conditionally returns `null` when `!open`, and the hook's `useLayoutEffect` guards on `panelRef.current === null`. This means the effect runs only when the panel is actually rendered (open=true), avoiding stale cleanup.
+- **VoucherSlotTrigger aria-disabled for empty cart:** When `cart.lines.length === 0`, the voucher trigger button uses `aria-disabled="true"` (not HTML `disabled`) per F-08, keeping it focusable.
+- **BudgetTracker live region format:** Live region text uses `"{Label}. Proyeksi {percent} persen."` where percent is the numeric portion of `percentLabel` (stripped of `%`). This matches F-16/F-20 requirement for persistent `role="status"` / `aria-live="polite"` container.
+- **AppStateProvider persistence:** `useEffect` serializes `toPersisted(state)` on every state change via `JSON.stringify` comparison. The `serialized` string is a dependency of the effect, ensuring saves only fire when the persisted shape actually changes.
 
 ## Open Gaps
 
-- **Placeholder UI:** `src/App.tsx` saat ini hanya merender `<main id="konten"><h1>TPBG</h1></main>` sebagai placeholder agar pratinjau Bolt tidak kosong. Diganti pada Prompt 3.
+- **Pages and routing not yet implemented:** `src/App.tsx` is still a placeholder. Pages (`src/pages/*`), router setup, route guards, and all 8 overlay integrations are Prompt 3 scope (Stage 5a-5d).
 - **Layout-dependent DoD items:** DoD-05, DoD-06, sebagian DoD-07, K-03, K-04 tidak dapat diverifikasi penuh tanpa mesin layout nyata. Diverifikasi via proxy struktural + checklist manual (lihat "WebContainer Adaptations").
+- **jsdom act warning:** `ReactDOMTestUtils.act` deprecated warning appears in test output but does not affect test results (24/24 pass). Resolving requires migrating to `react` act import — deferred to avoid churn.
 
 ## WebContainer Adaptations
 

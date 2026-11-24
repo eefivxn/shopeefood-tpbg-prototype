@@ -360,9 +360,9 @@ describe('T6: Budget settings, filter, sort', () => {
   });
 
   it('T6-D: BUDGET_FILTER_SET on with null budget is ignored', () => {
-    let s = { ...createInitialState(), budget: null };
-    s = dispatch(s, { type: 'BUDGET_FILTER_SET', on: true });
-    expect(s.budgetFilterOn).toBe(false);
+    const s = { ...createInitialState(), budget: null } as AppState;
+    const s2 = dispatch(s, { type: 'BUDGET_FILTER_SET', on: true });
+    expect(s2.budgetFilterOn).toBe(false);
   });
 
   it('T6-E: SORT_SET changes sortMode', () => {
@@ -422,10 +422,10 @@ describe('I-1..I-10 invariants', () => {
   });
 
   it('I-6: budgetFilterOn implies budget !== null', () => {
-    let s = dispatch(createInitialState(), { type: 'BUDGET_FILTER_SET', on: true });
+    const s = dispatch(createInitialState(), { type: 'BUDGET_FILTER_SET', on: true });
     expect(s.budgetFilterOn).toBe(true);
     expect(s.budget).not.toBeNull();
-    const sNoBudget = { ...createInitialState(), budget: null };
+    const sNoBudget = { ...createInitialState(), budget: null } as AppState;
     const s2 = dispatch(sNoBudget, { type: 'BUDGET_FILTER_SET', on: true });
     expect(s2.budgetFilterOn).toBe(false);
   });
